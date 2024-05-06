@@ -22,7 +22,7 @@ humansize = "2.1"
 miniz_oxide = "0.4"
 finl_unicode = "1.2"
 hex = "0.4"
-image = "0.24.6"
+image = "0.25"
 lazy_static = "1.4"
 log = "0.4"
 lru = "0.7"
@@ -37,7 +37,7 @@ wezterm-dynamic = { path = "../wezterm-dynamic" }
 
 [dev-dependencies]
 env_logger = "0.11"
-k9 = "0.11.0"
+k9 = "0.12.0"
 
 [dependencies.termwiz]
 version = "0.22"
