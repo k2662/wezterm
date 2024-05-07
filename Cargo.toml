@@ -19,7 +19,7 @@ exclude = [
 ]
 
 [profile.release]
-lto = "thin"
+lto = "full"
 strip = true
 debug = 0
 opt-level = 3
