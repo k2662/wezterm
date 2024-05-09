@@ -52,6 +52,7 @@ pub struct Client {
     sender: Sender<ReaderMessage>,
     local_domain_id: Option<DomainId>,
     client_id: ClientId,
+    client_domain_config: ClientDomainConfig,
     pub is_reconnectable: bool,
     pub is_local: bool,
 }
@@ -663,7 +664,9 @@ impl Reconnectable {
         let sess = ssh_connect_with_ui(ssh_config, ui)?;
         let proxy_bin = Self::wezterm_bin_path(&ssh_dom.remote_wezterm_path);
 
-        let cmd = if initial {
+        let cmd = if let Some(cmd) = ssh_dom.override_proxy_command.clone() {
+            cmd
+        } else if initial {
             format!("{} cli --prefer-mux proxy", proxy_bin)
         } else {
             format!("{} cli --prefer-mux --no-auto-start proxy", proxy_bin)
@@ -1015,6 +1018,7 @@ impl Reconnectable {
 
 impl Client {
     fn new(local_domain_id: Option<DomainId>, mut reconnectable: Reconnectable) -> Self {
+        let client_domain_config = reconnectable.config.clone();
         let is_reconnectable = reconnectable.reconnectable();
         let is_local = reconnectable.is_local();
         let (sender, mut receiver) = unbounded();
@@ -1112,7 +1116,12 @@ impl Client {
             is_reconnectable,
             is_local,
             client_id,
+            client_domain_config,
         }
+    }
+
+    pub fn into_client_domain_config(self) -> ClientDomainConfig {
+        self.client_domain_config
     }
 
     pub async fn verify_version_compat(
