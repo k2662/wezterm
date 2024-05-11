@@ -39,6 +39,13 @@ As features stabilize some brief notes about them will accumulate here.
 * [wezterm.serde](config/lua/wezterm.serde/index.md) module for serialization
   and deserialization of JSON, TOML and YAML. Thanks to @expnn! #4969
 * `wezterm ssh` now supports agent forwarding. Thanks to @Riatre! #5345
+* SSH multiplexer domains now support agent forwarding, and will automatically
+  maintain `SSH_AUTH_SOCK` to an appropriate value on the destination host,
+  depending on the value of the new
+  [mux_enable_ssh_agent](config/lua/config/mux_enable_ssh_agent.md) option.
+  ?988 #1647
+* [default_ssh_auth_sock](config/lua/config/default_ssh_auth_sock.md) option
+  to manage `SSH_AUTH_SOCK`.
 
 #### Fixed
 * Race condition when very quickly adjusting font scale, and other improvements
@@ -60,6 +67,10 @@ As features stabilize some brief notes about them will accumulate here.
   @quantonganh! #5306 #5305
 * wezterm-ssh now correctly handles two-phase processing of `%h` tokens. Thanks
   to @emc2314 and @wheatdog! #5163 #4503
+* We now respect line wrapping in alt-screen mode. Thanks to @eternity74! #5396
+  #3283
+* Wayland: hang when launched under ChromeOS Crostini. Thanks to @dberlin!
+  #5393 #5397
 
 #### Updated
 * Bundled conpty.dll and OpenConsole.exe to build 1.19.240130002.nupkg
