@@ -1,6 +1,5 @@
 use crate::domain::{ClientDomain, ClientDomainConfig};
 use crate::pane::ClientPane;
-use crate::UnixStream;
 use anyhow::{anyhow, bail, Context};
 use async_ossl::AsyncSslStream;
 use async_trait::async_trait;
@@ -25,11 +24,16 @@ use std::io::{Read, Write};
 use std::marker::Unpin;
 use std::net::TcpStream;
 #[cfg(unix)]
+use std::os::fd::{AsFd, AsRawFd, BorrowedFd, RawFd};
+#[cfg(unix)]
 use std::os::unix::process::CommandExt;
+#[cfg(windows)]
+use std::os::windows::io::{AsRawSocket, AsSocket, BorrowedSocket, RawSocket};
 use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::Duration;
 use thiserror::Error;
+use wezterm_uds::UnixStream;
 
 #[derive(Error, Debug)]
 #[error("Timeout")]
@@ -79,8 +83,8 @@ macro_rules! rpc {
             let start = std::time::Instant::now();
             let result = self.send_pdu(Pdu::$request_type(pdu)).await;
             let elapsed = start.elapsed();
-            metrics::histogram!("rpc", elapsed, "method" => stringify!($method_name));
-            metrics::counter!("rpc.count", 1, "method" => stringify!($method_name));
+            metrics::histogram!("rpc", "method" => stringify!($method_name)).record(elapsed);
+            metrics::counter!("rpc.count", "method" => stringify!($method_name)).increment(1);
             match result {
                 Ok(Pdu::$response_type(res)) => Ok(res),
                 Ok(_) => bail!("unexpected response {:?}", result),
@@ -98,8 +102,8 @@ macro_rules! rpc {
             let start = std::time::Instant::now();
             let result = self.send_pdu(Pdu::$request_type($request_type{})).await;
             let elapsed = start.elapsed();
-            metrics::histogram!("rpc", elapsed, "method" => stringify!($method_name));
-            metrics::counter!("rpc.count", 1, "method" => stringify!($method_name));
+            metrics::histogram!("rpc", "method" => stringify!($method_name)).record(elapsed);
+            metrics::counter!("rpc.count", "method" => stringify!($method_name)).increment(1);
             match result {
                 Ok(Pdu::$response_type(res)) => Ok(res),
                 Ok(_) => bail!("unexpected response {:?}", result),
@@ -524,6 +528,7 @@ where
     T: std::io::Write,
     T: std::io::Read,
     T: Send,
+    T: async_io::IoSafe,
 {
     async fn wait_for_readable(&self) -> anyhow::Result<()> {
         Ok(self.readable().await?)
@@ -542,6 +547,8 @@ struct SshStream {
     stdout: FileDescriptor,
 }
 
+unsafe impl async_io::IoSafe for SshStream {}
+
 impl std::fmt::Debug for SshStream {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         write!(fmt, "SshStream {{...}}")
@@ -549,16 +556,30 @@ impl std::fmt::Debug for SshStream {
 }
 
 #[cfg(unix)]
-impl std::os::unix::io::AsRawFd for SshStream {
-    fn as_raw_fd(&self) -> std::os::unix::io::RawFd {
+impl AsFd for SshStream {
+    fn as_fd(&self) -> BorrowedFd {
+        self.stdout.as_fd()
+    }
+}
+
+#[cfg(unix)]
+impl AsRawFd for SshStream {
+    fn as_raw_fd(&self) -> RawFd {
         self.stdout.as_raw_fd()
     }
 }
 
 #[cfg(windows)]
-impl std::os::windows::io::AsRawSocket for SshStream {
-    fn as_raw_socket(&self) -> std::os::windows::io::RawSocket {
+impl AsRawSocket for SshStream {
+    fn as_raw_socket(&self) -> RawSocket {
         self.stdout.as_raw_socket()
+    }
+}
+
+#[cfg(windows)]
+impl AsSocket for SshStream {
+    fn as_socket(&self) -> BorrowedSocket {
+        self.stdout.as_socket()
     }
 }
 
