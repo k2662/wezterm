@@ -109,7 +109,7 @@ jobs:
 
     steps:
       - name: "checkout repo"
-        uses: actions/checkout@v4.1.5
+        uses: actions/checkout@v4
       - name: "Download artifact"
         uses: actions/download-artifact@v4
         with:
