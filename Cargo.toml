@@ -20,6 +20,9 @@ exclude = [
 ]
 
 [profile.release]
+lto = "fat"
+strip = true
+debug = 0
 opt-level = 3
 # debug = 2
 
