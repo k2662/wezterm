@@ -37,7 +37,7 @@ jobs:
           submodules: "recursive"
       - name: "Install Rust (Intel)"
         shell: bash
-        run: "rustup update"
+        run: "rustup target add x86_64-apple-darwin"
       - name: "Compile with sccache"
         uses: mozilla-actions/sccache-action@v0.0.5
       - name: "Cache Rust Dependencies"
