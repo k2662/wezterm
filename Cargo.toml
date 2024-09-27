@@ -22,9 +22,8 @@ exclude = [
 [profile.release]
 lto = "fat"
 strip = true
-debug = 0
+debug = false
 opt-level = 3
-# debug = 2
 
 [profile.dev]
 # https://jakedeichert.com/blog/reducing-rust-incremental-compilation-times-on-macos-by-70-percent/
